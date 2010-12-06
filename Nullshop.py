@@ -3,7 +3,7 @@
 __author__ = "Jeffrey R. Spies"
 __copyright__ = "Copyright 2007-2010, Jeffrey R. Spies"
 __license__ = "Apache License, Version 2.0"
-__version__ = "0.2"
+__version__ = "0.21"
 __maintainer__ = "Jeffrey R. Spies"
 __email__ = "jspies@virginia.edu"
 __status__ = "Beta"
@@ -54,7 +54,7 @@ class Dispatch(QtGui.QMainWindow):
             + '\n' + 'overwritten; the exact shuffle is random, so it'
             + '\n' + 'would be impossible to recreate the image once lost.'
             + '\n'
-            + '\n' + 'Visit http://people.virginia.edu/~js6ew/ for more info.'
+            + '\n' + 'http://people.virginia.edu/~js6ew/nullshop'
         )
         drop.setAlignment(QtCore.Qt.AlignCenter)
         
@@ -74,13 +74,14 @@ class Dispatch(QtGui.QMainWindow):
     # Menu Actions
     #####################################################################################
     def convertFilesFromDialog(self):
+        timestamp = datetime.datetime.now().strftime('%Y%M%d%H%M%S')
         for filename in QtGui.QFileDialog.getOpenFileNames(self):
-            self.convert(str(filename))
+            self.convert(str(filename), timestamp)
     
     #####################################################################################
     # General Functions
     #####################################################################################    
-    def convert(self, filename):
+    def convert(self, filename, timestamp):
         base,ext = os.path.splitext(filename)
         im = Image.open(filename)
         pix = im.load()
@@ -92,7 +93,7 @@ class Dispatch(QtGui.QMainWindow):
         
         random.shuffle(pixels)
         im.putdata(pixels)
-        new = base + '.null.' + datetime.datetime.now().strftime('%Y%M%d%H%M%S')
+        new = base + '.null.' + timestamp
         im.save(new + '.png')
     
     #####################################################################################
@@ -103,10 +104,11 @@ class Dispatch(QtGui.QMainWindow):
         event.acceptProposedAction()
 
     def dropEvent(self, event):
+        timestamp = datetime.datetime.now().strftime('%Y%M%d%H%M%S')
         for i in event.mimeData().urls():
             filename = str(i.toString())
             filename = filename.replace('file://','')
-            self.convert(filename)
+            self.convert(filename, timestamp)
 
 if __name__ == '__main__':
     import sys
