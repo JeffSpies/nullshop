@@ -3,15 +3,15 @@
 __author__ = "Jeffrey R. Spies"
 __copyright__ = "Copyright 2007-2010, Jeffrey R. Spies"
 __license__ = "Apache License, Version 2.0"
-__version__ = "0.21"
+__version__ = "0.22"
 __maintainer__ = "Jeffrey R. Spies"
 __email__ = "jspies@virginia.edu"
 __status__ = "Beta"
 __title__ = "Nullshop"
 
+import sys, random, os, datetime
 from PyQt4 import QtCore, QtGui
 import Image
-import sys, random, os, datetime
 
 class Dispatch(QtGui.QMainWindow):
     # dispatchList = []
@@ -28,7 +28,7 @@ class Dispatch(QtGui.QMainWindow):
         
         self.menuFile = self.menuBar().addMenu("&File")
         
-        actionConvertFiles = QtGui.QAction("&Convert Files", self,
+        actionConvertFiles = QtGui.QAction("&Convert Files...", self,
             statusTip = "Convert Files",
             triggered=self.convertFilesFromDialog)
         
@@ -74,14 +74,39 @@ class Dispatch(QtGui.QMainWindow):
     # Menu Actions
     #####################################################################################
     def convertFilesFromDialog(self):
-        timestamp = datetime.datetime.now().strftime('%Y%M%d%H%M%S')
-        for filename in QtGui.QFileDialog.getOpenFileNames(self):
-            self.convert(str(filename), timestamp)
+        filenames = QtGui.QFileDialog.getOpenFileNames(self);
+        self.convertFiles(filenames)
+    
+    #####################################################################################
+    # Drop Handlers
+    #####################################################################################
+
+    def dragEnterEvent(self, event):
+        event.acceptProposedAction()
+
+    def dropEvent(self, event):
+        print [str(i.toString()).replace('file://','') for i in event.mimeData().urls()]
+        self.convertFiles(
+            [str(i.toString()).replace('file://','') for i in event.mimeData().urls()]
+        )
     
     #####################################################################################
     # General Functions
     #####################################################################################    
-    def convert(self, filename, timestamp):
+    def convertFiles(self, filenames):
+        timestamp = datetime.datetime.now().strftime('%Y%M%d%H%M%S')
+        progress = QtGui.QProgressDialog("Converting files...", "Cancel", 0, len(filenames))
+        progress.setWindowModality(QtCore.Qt.WindowModal)
+        i = 0
+        for filename in filenames:
+            i += 1
+            progress.setValue(i)
+            if progress.wasCanceled():
+                break;
+            self.convertFile(str(filename), timestamp)
+        progress.setValue(len(filenames))
+    
+    def convertFile(self, filename, timestamp):
         base,ext = os.path.splitext(filename)
         im = Image.open(filename)
         pix = im.load()
@@ -95,20 +120,6 @@ class Dispatch(QtGui.QMainWindow):
         im.putdata(pixels)
         new = base + '.null.' + timestamp
         im.save(new + '.png')
-    
-    #####################################################################################
-    # Drop Handlers
-    #####################################################################################
-    
-    def dragEnterEvent(self, event):
-        event.acceptProposedAction()
-
-    def dropEvent(self, event):
-        timestamp = datetime.datetime.now().strftime('%Y%M%d%H%M%S')
-        for i in event.mimeData().urls():
-            filename = str(i.toString())
-            filename = filename.replace('file://','')
-            self.convert(filename, timestamp)
 
 if __name__ == '__main__':
     import sys
